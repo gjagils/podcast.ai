@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  podcast-ai:
+    build: .
+    container_name: podcast-ai
+    restart: unless-stopped
+    ports:
+      - "8100:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./output:/app/output
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

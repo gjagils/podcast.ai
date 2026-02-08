@@ -6,91 +6,137 @@ Zet een Word-document om in een podcast van 5-10 minuten. Twee presentatoren
 
 ## Wat doet het?
 
-1. **Leest** je Word-document (.docx) in
-2. **Genereert** een podcast-script met AI (OpenAI) waarin alle stof wordt uitgelegd
-3. **Maakt** een MP3-bestand met Nederlandse stemmen
+1. **Upload** je Word-document (.docx) via de website
+2. **Kies** de gewenste duur (5-10 minuten)
+3. **AI genereert** een podcast-script waarin alle stof wordt uitgelegd
+4. **Luister** direct in de browser of download de MP3
 
-## Installatie
+## Draaien op Synology (Docker / Portainer)
+
+### Voorbereiding op je Synology
+
+SSH naar je Synology en maak de projectmap aan:
 
 ```bash
+# Maak de map aan (pas het pad aan naar jouw situatie)
+mkdir -p /volume1/docker/podcast-ai/output
+
 # Clone de repository
+cd /volume1/docker/podcast-ai
+git clone https://github.com/gjagils/podcast.ai.git .
+
+# OF kopieer de bestanden handmatig naar /volume1/docker/podcast-ai/
+```
+
+### Optie 1: Portainer Stack (aanbevolen)
+
+1. Open **Portainer** in je browser
+2. Ga naar **Stacks** > **Add stack**
+3. Geef de stack een naam: `podcast-ai`
+4. Plak de volgende **docker-compose** configuratie:
+
+```yaml
+version: "3.8"
+
+services:
+  podcast-ai:
+    build: /volume1/docker/podcast-ai
+    container_name: podcast-ai
+    restart: unless-stopped
+    ports:
+      - "8100:8000"
+    environment:
+      - OPENAI_API_KEY=sk-jouw-api-key-hier
+    volumes:
+      - /volume1/docker/podcast-ai/output:/app/output
+```
+
+5. Vul bij `OPENAI_API_KEY` je echte API-key in
+6. Klik op **Deploy the stack**
+7. Ga naar `http://SYNOLOGY-IP:8100` in je browser
+
+### Optie 2: Docker Compose via SSH
+
+```bash
+cd /volume1/docker/podcast-ai
+
+# Maak een .env bestand
+echo "OPENAI_API_KEY=sk-jouw-api-key-hier" > .env
+
+# Build en start
+docker-compose up -d --build
+
+# Logs bekijken
+docker-compose logs -f
+```
+
+### Na installatie
+
+- De website is bereikbaar op: `http://SYNOLOGY-IP:8100`
+- Gegenereerde podcasts staan in: `/volume1/docker/podcast-ai/output/`
+- Poort wijzigen? Pas `8100:8000` aan (het eerste getal is de externe poort)
+
+---
+
+## Lokaal draaien (zonder Docker)
+
+### Installatie
+
+```bash
 git clone <repo-url>
 cd podcast.ai
 
-# Maak een virtuele omgeving aan
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# of: venv\Scripts\activate  # Windows
+source venv/bin/activate
 
-# Installeer de vereisten
 pip install -r requirements.txt
 
-# ffmpeg is nodig voor audiobewerking
-# Ubuntu/Debian:
-sudo apt install ffmpeg
-# Mac:
-brew install ffmpeg
+# ffmpeg is nodig
+sudo apt install ffmpeg  # Ubuntu/Debian
+brew install ffmpeg      # Mac
 ```
 
-## Configuratie
-
-Maak een `.env` bestand aan op basis van het voorbeeld:
+### Configuratie
 
 ```bash
 cp .env.example .env
+# Vul je OpenAI API-key in
 ```
 
-Vul je OpenAI API-key in:
-
-```
-OPENAI_API_KEY=sk-jouw-api-key
-```
-
-## Gebruik
-
-### Simpel
+### Web interface starten
 
 ```bash
-python main.py jouw_document.docx
+python -m uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-Dit genereert een podcast van ~7 minuten en slaat het op als `output/jouw_document.mp3`.
+Open `http://localhost:8000` in je browser.
 
-### Opties
+### Command-line gebruik
 
 ```bash
-# Podcast van 10 minuten
-python main.py document.docx --duur 10
-
-# Eigen output-bestand
-python main.py document.docx --output mijn_podcast.mp3
-
-# Alleen het script genereren (geen audio)
-python main.py document.docx --alleen-script
-
-# Ander AI-model gebruiken
-python main.py document.docx --model gpt-4o-mini
+python main.py document.docx              # Standaard 7 minuten
+python main.py document.docx --duur 10    # 10 minuten
+python main.py document.docx --alleen-script  # Alleen script
 ```
-
-### Stap voor stap
-
-1. Zet je Word-bestand in de `input/` map (optioneel, je kunt elk pad gebruiken)
-2. Voer het commando uit: `python main.py input/mijn_bestand.docx`
-3. Wacht tot het script en de audio zijn gegenereerd
-4. Je podcast staat in de `output/` map
 
 ## Projectstructuur
 
 ```
 podcast.ai/
-├── main.py                  # Hoofdscript - start hier
+├── app.py                   # Web applicatie (FastAPI)
+├── main.py                  # CLI versie
+├── Dockerfile               # Docker image
+├── docker-compose.yml       # Docker Compose config
 ├── requirements.txt         # Python packages
 ├── .env.example             # Voorbeeld configuratie
+├── static/
+│   ├── index.html           # Website
+│   ├── style.css            # Styling
+│   └── app.js               # Frontend logica
 ├── src/
 │   ├── document_reader.py   # Leest Word-documenten
 │   ├── script_generator.py  # Genereert podcast-script met AI
 │   └── audio_generator.py   # Maakt audio met Nederlandse stemmen
-├── input/                   # Plaats hier je Word-bestanden
 └── output/                  # Hier komen de podcasts
 ```
 
@@ -102,7 +148,6 @@ De podcast gebruikt twee Nederlandse stemmen:
 
 ## Vereisten
 
-- Python 3.10+
 - OpenAI API-key
-- ffmpeg (voor audiobewerking)
+- Docker (voor Synology) of Python 3.10+ (lokaal)
 - Internetverbinding (voor AI en text-to-speech)

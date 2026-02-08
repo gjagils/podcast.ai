@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast.ai - Audio Recap</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Podcast.ai</h1>
+            <p class="subtitle">Upload een Word-document en krijg een podcast terug</p>
+        </header>
+
+        <!-- Stap 1: Upload -->
+        <section id="step-upload" class="card">
+            <h2>1. Upload je document</h2>
+            <div class="upload-area" id="drop-zone">
+                <div class="upload-icon">📄</div>
+                <p>Sleep je <strong>.docx</strong> bestand hierheen</p>
+                <p class="upload-sub">of</p>
+                <label class="btn" for="file-input">Kies bestand</label>
+                <input type="file" id="file-input" accept=".docx" hidden>
+            </div>
+            <div id="file-info" class="file-info hidden">
+                <span id="file-name"></span>
+                <button class="btn-small" id="remove-file">Verwijder</button>
+            </div>
+        </section>
+
+        <!-- Stap 2: Instellingen -->
+        <section id="step-settings" class="card hidden">
+            <h2>2. Instellingen</h2>
+            <div class="doc-summary" id="doc-summary"></div>
+            <div class="settings-grid">
+                <div class="setting">
+                    <label for="duration">Duur van de podcast</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="duration" min="5" max="10" value="7">
+                        <span id="duration-label">7 minuten</span>
+                    </div>
+                </div>
+                <div class="setting">
+                    <label for="model">AI Model</label>
+                    <select id="model">
+                        <option value="gpt-4o">GPT-4o (beste kwaliteit)</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini (sneller & goedkoper)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="generate-btn">Genereer podcast</button>
+        </section>
+
+        <!-- Stap 3: Voortgang -->
+        <section id="step-progress" class="card hidden">
+            <h2>3. Podcast wordt gemaakt...</h2>
+            <div class="progress-steps">
+                <div class="progress-step active" id="prog-script">
+                    <div class="step-dot"></div>
+                    <span>Script schrijven met AI...</span>
+                </div>
+                <div class="progress-step" id="prog-audio">
+                    <div class="step-dot"></div>
+                    <span>Audio genereren met Nederlandse stemmen...</span>
+                </div>
+            </div>
+            <div class="spinner"></div>
+            <p class="progress-note">Dit kan een paar minuten duren, afhankelijk van de lengte.</p>
+        </section>
+
+        <!-- Stap 4: Resultaat -->
+        <section id="step-result" class="card hidden">
+            <h2>Je podcast is klaar!</h2>
+            <div class="player-wrapper">
+                <audio id="audio-player" controls></audio>
+            </div>
+            <div class="result-actions">
+                <a id="download-audio" class="btn btn-primary" download>Download MP3</a>
+                <a id="download-script" class="btn" download>Download script</a>
+                <button class="btn" id="new-podcast">Nieuwe podcast</button>
+            </div>
+        </section>
+
+        <!-- Foutmelding -->
+        <section id="step-error" class="card hidden">
+            <h2>Er ging iets mis</h2>
+            <p id="error-message" class="error-text"></p>
+            <button class="btn" id="retry-btn">Opnieuw proberen</button>
+        </section>
+
+        <footer>
+            <p>Podcast.ai - Audio Recap Generator</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
