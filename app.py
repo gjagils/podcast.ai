@@ -78,7 +78,7 @@ async def upload_document(file: UploadFile = File(...)):
 
 
 @app.post("/api/generate/{job_id}")
-async def generate_podcast(
+def generate_podcast(
     job_id: str,
     duration: int = Form(default=7),
     model: str = Form(default="gpt-4o"),
