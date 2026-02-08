@@ -112,9 +112,15 @@ async function handleFile(file) {
     }
 }
 
-// --- Duur slider ---
+// --- Sliders ---
 durationInput.addEventListener("input", () => {
     durationLabel.textContent = `${durationInput.value} minuten`;
+});
+
+const speedInput = $("#speed");
+const speedLabel = $("#speed-label");
+speedInput.addEventListener("input", () => {
+    speedLabel.textContent = `${parseFloat(speedInput.value).toFixed(2)}x`;
 });
 
 // --- Genereren ---
@@ -130,6 +136,7 @@ generateBtn.addEventListener("click", async () => {
     formData.append("model", $("#model").value);
     formData.append("mode", $("#mode").value);
     formData.append("tts_engine", $("#tts-engine").value);
+    formData.append("speed", speedInput.value);
 
     try {
         const res = await fetch(`/api/generate/${currentJobId}`, {

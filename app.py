@@ -84,6 +84,7 @@ def generate_podcast(
     model: str = Form(default="gpt-4o"),
     mode: str = Form(default="duo"),
     tts_engine: str = Form(default="openai"),
+    speed: float = Form(default=1.0),
 ):
     """Genereer de podcast voor een geupload document."""
     if job_id not in jobs:
@@ -115,7 +116,7 @@ def generate_podcast(
         # Audio genereren
         job["step"] = "audio"
         audio_path = str(OUTPUT_DIR / f"{job_id}.mp3")
-        generate_audio(script, audio_path, tts_engine=tts_engine)
+        generate_audio(script, audio_path, tts_engine=tts_engine, speed=speed)
 
         job["status"] = "done"
         job["audio_file"] = f"{job_id}.mp3"

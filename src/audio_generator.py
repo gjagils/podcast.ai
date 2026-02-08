@@ -27,24 +27,24 @@ PAUSE_BETWEEN_SPEAKERS_MS = 400
 
 # === OpenAI TTS ===
 
-def _generate_segment_openai(text: str, voice: str, output_path: str) -> None:
+def _generate_segment_openai(text: str, voice: str, output_path: str, speed: float = 1.0) -> None:
     client = OpenAI()
     response = client.audio.speech.create(
         model="tts-1-hd",
         voice=voice,
         input=text,
-        speed=1.1,
+        speed=speed,
     )
     response.stream_to_file(output_path)
 
 
-def _generate_audio_openai(script: list[dict], output_path: str) -> str:
+def _generate_audio_openai(script: list[dict], output_path: str, speed: float = 1.0) -> str:
     with tempfile.TemporaryDirectory() as temp_dir:
         paths = []
         for i, segment in enumerate(script):
             voice = OPENAI_VOICES.get(segment["speaker"], OPENAI_VOICES["Emma"])
             path = str(Path(temp_dir) / f"segment_{i:04d}.mp3")
-            _generate_segment_openai(segment["text"], voice, path)
+            _generate_segment_openai(segment["text"], voice, path, speed=speed)
             paths.append(path)
 
         return _combine_segments(paths, output_path)
@@ -52,13 +52,15 @@ def _generate_audio_openai(script: list[dict], output_path: str) -> str:
 
 # === Edge TTS (gratis fallback) ===
 
-async def _generate_segment_edge(text: str, voice: str, output_path: str) -> None:
+async def _generate_segment_edge(text: str, voice: str, output_path: str, speed: float = 1.0) -> None:
     import edge_tts
-    communicate = edge_tts.Communicate(text, voice, rate=EDGE_SPEECH_RATE)
+    rate_pct = round((speed - 1.0) * 100)
+    rate_str = f"+{rate_pct}%" if rate_pct >= 0 else f"{rate_pct}%"
+    communicate = edge_tts.Communicate(text, voice, rate=rate_str)
     await communicate.save(output_path)
 
 
-async def _generate_all_segments_edge(script: list[dict], temp_dir: str) -> list[str]:
+async def _generate_all_segments_edge(script: list[dict], temp_dir: str, speed: float = 1.0) -> list[str]:
     paths = []
     tasks = []
 
@@ -66,7 +68,7 @@ async def _generate_all_segments_edge(script: list[dict], temp_dir: str) -> list
         voice = EDGE_VOICES.get(segment["speaker"], EDGE_VOICES["Emma"])
         path = str(Path(temp_dir) / f"segment_{i:04d}.mp3")
         paths.append(path)
-        tasks.append(_generate_segment_edge(segment["text"], voice, path))
+        tasks.append(_generate_segment_edge(segment["text"], voice, path, speed=speed))
 
     batch_size = 5
     for i in range(0, len(tasks), batch_size):
@@ -76,9 +78,9 @@ async def _generate_all_segments_edge(script: list[dict], temp_dir: str) -> list
     return paths
 
 
-def _generate_audio_edge(script: list[dict], output_path: str) -> str:
+def _generate_audio_edge(script: list[dict], output_path: str, speed: float = 1.0) -> str:
     with tempfile.TemporaryDirectory() as temp_dir:
-        paths = asyncio.run(_generate_all_segments_edge(script, temp_dir))
+        paths = asyncio.run(_generate_all_segments_edge(script, temp_dir, speed=speed))
         return _combine_segments(paths, output_path)
 
 
@@ -100,15 +102,17 @@ def _combine_segments(paths: list[str], output_path: str) -> str:
     return str(output)
 
 
-def generate_audio(script: list[dict], output_path: str, tts_engine: str = "openai") -> str:
+def generate_audio(script: list[dict], output_path: str, tts_engine: str = "openai", speed: float = 1.0) -> str:
     """Genereer podcast-audio.
 
     Args:
         script: Lijst van {'speaker': str, 'text': str} dicts.
         output_path: Pad voor het MP3-bestand.
         tts_engine: "openai" (natuurlijk, ~$0.10/podcast) of "edge" (gratis).
+        speed: Spreeksnelheid (0.7 - 1.3, standaard 1.0).
     """
+    speed = max(0.7, min(1.3, speed))
     if tts_engine == "openai":
-        return _generate_audio_openai(script, output_path)
+        return _generate_audio_openai(script, output_path, speed=speed)
     else:
-        return _generate_audio_edge(script, output_path)
+        return _generate_audio_edge(script, output_path, speed=speed)
