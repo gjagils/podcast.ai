@@ -40,7 +40,10 @@ function showError(msg) {
 }
 
 // --- Drag & Drop ---
-dropZone.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("click", (e) => {
+    if (e.target.tagName === "LABEL" || e.target.tagName === "INPUT") return;
+    fileInput.click();
+});
 
 dropZone.addEventListener("dragover", (e) => {
     e.preventDefault();
