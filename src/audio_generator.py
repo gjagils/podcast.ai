@@ -13,8 +13,8 @@ VOICES = {
     "Lucas": "nl-NL-MaartenNeural",  # Mannelijke Nederlandse stem
 }
 
-SPEECH_RATE = "+0%"
-PAUSE_BETWEEN_SPEAKERS_MS = 600
+SPEECH_RATE = "+15%"
+PAUSE_BETWEEN_SPEAKERS_MS = 400
 
 
 async def _generate_segment(text: str, voice: str, output_path: str) -> None:
