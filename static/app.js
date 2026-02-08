@@ -5,6 +5,7 @@ let currentJobId = null;
 // --- Elementen ---
 const dropZone = $("#drop-zone");
 const fileInput = $("#file-input");
+const chooseFileBtn = $("#choose-file-btn");
 const fileInfo = $("#file-info");
 const fileName = $("#file-name");
 const removeFile = $("#remove-file");
@@ -39,12 +40,18 @@ function showError(msg) {
     showStep(stepError);
 }
 
-// --- Drag & Drop ---
-dropZone.addEventListener("click", (e) => {
-    if (e.target.tagName === "LABEL" || e.target.tagName === "INPUT") return;
+// --- Bestandsselectie ---
+chooseFileBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
     fileInput.click();
 });
 
+dropZone.addEventListener("click", (e) => {
+    if (e.target === chooseFileBtn || e.target === fileInput) return;
+    fileInput.click();
+});
+
+// --- Drag & Drop ---
 dropZone.addEventListener("dragover", (e) => {
     e.preventDefault();
     dropZone.classList.add("dragover");
@@ -121,6 +128,8 @@ generateBtn.addEventListener("click", async () => {
     const formData = new FormData();
     formData.append("duration", durationInput.value);
     formData.append("model", $("#model").value);
+    formData.append("mode", $("#mode").value);
+    formData.append("tts_engine", $("#tts-engine").value);
 
     try {
         const res = await fetch(`/api/generate/${currentJobId}`, {
@@ -148,39 +157,6 @@ generateBtn.addEventListener("click", async () => {
         showError(e.message);
     }
 });
-
-// --- Polling voor voortgang (fallback als generatie lang duurt) ---
-let pollInterval = null;
-
-function startPolling() {
-    pollInterval = setInterval(async () => {
-        if (!currentJobId) return;
-        try {
-            const res = await fetch(`/api/status/${currentJobId}`);
-            const data = await res.json();
-
-            if (data.step === "audio") {
-                progScript.className = "progress-step done";
-                progAudio.className = "progress-step active";
-            }
-
-            if (data.status === "done") {
-                clearInterval(pollInterval);
-                progScript.className = "progress-step done";
-                progAudio.className = "progress-step done";
-                audioPlayer.src = data.audio_url;
-                downloadAudio.href = `/api/download/${currentJobId}`;
-                downloadScript.href = data.script_url;
-                showStep(stepResult);
-            } else if (data.status === "error") {
-                clearInterval(pollInterval);
-                showError(data.error || "Er ging iets mis.");
-            }
-        } catch (_) {
-            // Negeer polling fouten
-        }
-    }, 3000);
-}
 
 // --- Opnieuw / Nieuw ---
 newPodcast.addEventListener("click", () => {

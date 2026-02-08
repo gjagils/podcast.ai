@@ -2,7 +2,7 @@
 
 from openai import OpenAI
 
-SYSTEM_PROMPT = """\
+SYSTEM_PROMPT_DUO = """\
 Je bent een podcast-scriptschrijver. Je schrijft scripts voor een educatieve \
 podcast met twee presentatoren: Emma en Lucas. De podcast heet "Audio Recap".
 
@@ -20,6 +20,26 @@ Regels:
 - Formaat: elke regel begint met "Emma:" of "Lucas:" gevolgd door hun tekst.
 - Zorg dat het script vloeiend en natuurlijk klinkt, alsof twee mensen echt met \
 elkaar praten.
+- Sla NIETS over uit het bronmateriaal. Alles moet aan bod komen.
+"""
+
+SYSTEM_PROMPT_SOLO = """\
+Je bent een podcast-scriptschrijver. Je schrijft scripts voor een educatieve \
+podcast met een presentator: Verteller. De podcast heet "Audio Recap".
+
+Regels:
+- Schrijf een natuurlijk, helder script in het Nederlands.
+- De Verteller legt alles uit op een toegankelijke en enthousiasmerende manier.
+- Leg ALLE belangrijke concepten uit het bronmateriaal uit.
+- Gebruik voorbeelden en analogieen om moeilijke stof begrijpelijk te maken.
+- Het script moet resulteren in een podcast van {duration} minuten wanneer voorgelezen.
+- Reken op circa 150 woorden per minuut gesproken tekst.
+- Het script moet dus ongeveer {word_count} woorden bevatten.
+- Begin met een korte intro waarin het onderwerp wordt geintroduceerd.
+- Eindig met een samenvatting van de belangrijkste punten.
+- Gebruik GEEN aanwijzingen als [lacht], [pauze] etc. Alleen gesproken tekst.
+- Formaat: elke regel begint met "Verteller:" gevolgd door de tekst.
+- Spreek de luisteraar direct aan met "je" en "jij".
 - Sla NIETS over uit het bronmateriaal. Alles moet aan bod komen.
 """
 
@@ -41,6 +61,7 @@ def generate_script(
     duration_minutes: int = 7,
     api_key: str | None = None,
     model: str = "gpt-4o",
+    mode: str = "duo",
 ) -> list[dict]:
     """Generate a podcast script from document content.
 
@@ -49,6 +70,7 @@ def generate_script(
         duration_minutes: Target duration in minutes (5-10)
         api_key: OpenAI API key (uses env var if None)
         model: OpenAI model to use
+        mode: "duo" (Emma & Lucas) of "solo" (Verteller)
 
     Returns:
         List of dicts with 'speaker' and 'text' keys.
@@ -58,7 +80,11 @@ def generate_script(
 
     client = OpenAI(api_key=api_key) if api_key else OpenAI()
 
-    system = SYSTEM_PROMPT.format(duration=duration_minutes, word_count=word_count)
+    if mode == "solo":
+        system = SYSTEM_PROMPT_SOLO.format(duration=duration_minutes, word_count=word_count)
+    else:
+        system = SYSTEM_PROMPT_DUO.format(duration=duration_minutes, word_count=word_count)
+
     user = USER_PROMPT.format(
         title=document["title"],
         content=document["full_text"],
@@ -81,29 +107,29 @@ def generate_script(
 
 
 def parse_script(raw_script: str) -> list[dict]:
-    """Parse raw script text into structured segments.
-
-    Returns list of {'speaker': 'Emma'|'Lucas', 'text': '...'} dicts.
-    """
+    """Parse raw script text into structured segments."""
     lines = []
     current_speaker = None
     current_text = []
+
+    speakers = ["Emma:", "Lucas:", "Verteller:"]
 
     for line in raw_script.strip().split("\n"):
         line = line.strip()
         if not line:
             continue
 
-        if line.startswith("Emma:"):
+        found_speaker = None
+        for prefix in speakers:
+            if line.startswith(prefix):
+                found_speaker = prefix[:-1]  # Remove ':'
+                break
+
+        if found_speaker:
             if current_speaker:
                 lines.append({"speaker": current_speaker, "text": " ".join(current_text)})
-            current_speaker = "Emma"
-            current_text = [line[len("Emma:"):].strip()]
-        elif line.startswith("Lucas:"):
-            if current_speaker:
-                lines.append({"speaker": current_speaker, "text": " ".join(current_text)})
-            current_speaker = "Lucas"
-            current_text = [line[len("Lucas:"):].strip()]
+            current_speaker = found_speaker
+            current_text = [line[len(found_speaker) + 1:].strip()]
         else:
             current_text.append(line)
 

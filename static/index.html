@@ -20,7 +20,7 @@
                 <div class="upload-icon">📄</div>
                 <p>Sleep je <strong>.docx</strong> bestand hierheen</p>
                 <p class="upload-sub">of</p>
-                <label class="btn" for="file-input">Kies bestand</label>
+                <button class="btn" id="choose-file-btn" type="button">Kies bestand</button>
                 <input type="file" id="file-input" accept=".docx" hidden>
             </div>
             <div id="file-info" class="file-info hidden">
@@ -35,11 +35,25 @@
             <div class="doc-summary" id="doc-summary"></div>
             <div class="settings-grid">
                 <div class="setting">
+                    <label for="mode">Stijl</label>
+                    <select id="mode">
+                        <option value="duo">Gesprek (Emma & Lucas)</option>
+                        <option value="solo">Solo verteller</option>
+                    </select>
+                </div>
+                <div class="setting">
                     <label for="duration">Duur van de podcast</label>
                     <div class="range-wrapper">
                         <input type="range" id="duration" min="5" max="10" value="7">
                         <span id="duration-label">7 minuten</span>
                     </div>
+                </div>
+                <div class="setting">
+                    <label for="tts-engine">Stemkwaliteit</label>
+                    <select id="tts-engine">
+                        <option value="openai">OpenAI TTS (natuurlijk, ~$0.10)</option>
+                        <option value="edge">Edge TTS (gratis, robotachtiger)</option>
+                    </select>
                 </div>
                 <div class="setting">
                     <label for="model">AI Model</label>
@@ -62,7 +76,7 @@
                 </div>
                 <div class="progress-step" id="prog-audio">
                     <div class="step-dot"></div>
-                    <span>Audio genereren met Nederlandse stemmen...</span>
+                    <span>Audio genereren...</span>
                 </div>
             </div>
             <div class="spinner"></div>
